@@ -145,9 +145,9 @@ class PushAway(SingleArmEnv):
 
         use_camera_obs=True,
 
-        use_object_obs=False,
+        use_object_obs=True,        # use cube info 
 
-        close_to_goal_threshold = 0.04,
+        close_to_goal_threshold = 0.02,
 
 
         reward_scale=1.0,
@@ -222,7 +222,7 @@ class PushAway(SingleArmEnv):
 
         Sparse un-normalized reward:
 
-            - a discrete reward of 2.25 is provided if the cube is lifted
+            - a discrete reward of 2.25 is provided if the cube is pushed away
 
         Un-normalized summed components if using reward shaping:
 
@@ -341,8 +341,8 @@ class PushAway(SingleArmEnv):
             self.placement_initializer = UniformRandomSampler(
                 name="ObjectSampler",
                 mujoco_objects=self.cube,
-                x_range=[-0.03, 0.03],
-                y_range=[-0.03, 0.03],
+                x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
+                y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
                 rotation=None,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
@@ -401,14 +401,14 @@ class PushAway(SingleArmEnv):
 
             sensors.append(cube_quat)
 
-            @sensor(modality=modality)
-            def gripper_to_cube_pos(obs_cache):
-                return (
-                    obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
-                    if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
-                    else np.zeros(3)
-                )
-            sensors.append(gripper_to_cube_pos)
+            # @sensor(modality=modality)
+            # def gripper_to_cube_pos(obs_cache):
+            #     return (
+            #         obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
+            #         if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
+            #         else np.zeros(3)
+            #     )
+            # sensors.append(gripper_to_cube_pos)
         
         # add goal position
         @sensor(modality=modality)
