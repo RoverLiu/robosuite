@@ -149,6 +149,8 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
+        contact_force_limit = 10,
+
 
         reward_scale=1.0,
         reward_shaping=False,
@@ -188,6 +190,9 @@ class PushAway(SingleArmEnv):
 
         # close to the goal position
         self.close_to_goal_threshold = close_to_goal_threshold
+
+        # contact force limit
+        self.contact_force_limit = contact_force_limit
 
         super().__init__(
             robots=robots,
@@ -261,8 +266,8 @@ class PushAway(SingleArmEnv):
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
-            reaching_reward = 1 - np.tanh(10.0 * dist)
-            reward += reaching_reward
+            position_reward = 1 - np.tanh(10.0 * dist)
+            reward += position_reward
 
             # contact reward
             for i in range(self.sim.data.ncon):
@@ -279,7 +284,12 @@ class PushAway(SingleArmEnv):
                     contact_pos = contact.pos
                     if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
                         continue
-                    reward += 0.25
+
+                    contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
+                    abs_force = np.linalg.norm(contact_force[:3]) 
+
+                    force_reward = 1 - np.tanh(10.0 * abs(abs_force - self.contact_force_limit))
+                    reward += force_reward
                     # print("Contact rewarded!")
                     break
 
