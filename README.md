@@ -15,6 +15,7 @@ This package is modified from [robosuite official package](https://github.com/AR
 - Python 3 (Tested on python 3.9)
 - mujoco
 - numpy
+- Pytorch
 
 ### Install anaconda
 
