@@ -150,6 +150,7 @@ class PushAway(SingleArmEnv):
         close_to_goal_threshold = 0.02,
 
         is_contact_logging = True,
+        contact_force_limit = 10,
 
 
         reward_scale=1.0,
@@ -198,6 +199,8 @@ class PushAway(SingleArmEnv):
             self.contact_log_name = "contact_log/"+time.strftime("%Y%m%d-%H%M%S")+".csv"
 
             print("#########################################\nContacf detail is logged to: {}".format(self.contact_log_name))
+        # contact force limit
+        self.contact_force_limit = contact_force_limit
 
         super().__init__(
             robots=robots,
@@ -271,8 +274,8 @@ class PushAway(SingleArmEnv):
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
-            reaching_reward = 1 - np.tanh(10.0 * dist)
-            reward += reaching_reward
+            position_reward = 1 - np.tanh(10.0 * dist)
+            reward += position_reward
 
             # contact reward
             logged = False
@@ -289,12 +292,20 @@ class PushAway(SingleArmEnv):
                     # if it is the bottom surface, skip
                     contact_pos = contact.pos
                     contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
-                    
+                    abs_force = np.linalg.norm(contact_force[:3]) 
+
+                    # contact the table
                     if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
                         continue
-                    reward += 0.25
 
-                    # todo: add a force limit here!-----------------------------------------------------------------------------------
+                    force_reward = 1 - np.tanh(10.0 * abs(abs_force - self.contact_force_limit))
+                    reward += force_reward
+                    # print("Contact rewarded!")
+                    
+                    # if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
+                    #     continue
+                    # reward += 0.25
+
 
                     # log data here
                     if self.is_contact_logging:
@@ -302,7 +313,8 @@ class PushAway(SingleArmEnv):
                         self.log_data(data)
 
                         logged = True
-                    # print("Contact rewarded!")
+
+                    
                     break
             
             if not logged and self.is_contact_logging:
@@ -368,8 +380,10 @@ class PushAway(SingleArmEnv):
             self.placement_initializer = UniformRandomSampler(
                 name="ObjectSampler",
                 mujoco_objects=self.cube,
-                x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
-                y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
+                # x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
+                # y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
+                x_range=[-0.02, 0.02],
+                y_range=[-0.02, 0.02],
                 rotation=None,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
@@ -440,7 +454,7 @@ class PushAway(SingleArmEnv):
         # add goal position
         @sensor(modality=modality)
         def goal_position(obs_cache):
-            return self.model.mujoco_arena.goal_pose
+            return self.model.mujoco_arena.goal_pose - self.sim.data.body_xpos[self.cube_body_id][:2]
         
         sensors.append(goal_position)
 
