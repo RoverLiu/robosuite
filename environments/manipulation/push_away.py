@@ -10,7 +10,7 @@ from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
 from robosuite.utils.placement_samplers import UniformRandomSampler
 from robosuite.utils.transform_utils import convert_quat
-
+import time
 
 class PushAway(SingleArmEnv):
     """
@@ -149,6 +149,8 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
+        is_contact_logging = True,
+
 
         reward_scale=1.0,
         reward_shaping=False,
@@ -188,6 +190,14 @@ class PushAway(SingleArmEnv):
 
         # close to the goal position
         self.close_to_goal_threshold = close_to_goal_threshold
+
+        # log the contact information
+        self.is_contact_logging = is_contact_logging
+
+        if self.is_contact_logging:
+            self.contact_log_name = "contact_log/"+time.strftime("%Y%m%d-%H%M%S")+".csv"
+
+            print("#########################################\nContacf detail is logged to: {}".format(self.contact_log_name))
 
         super().__init__(
             robots=robots,
@@ -265,6 +275,7 @@ class PushAway(SingleArmEnv):
             reward += reaching_reward
 
             # contact reward
+            logged = False
             for i in range(self.sim.data.ncon):
                 # Note that the contact array has more than `ncon` entries,
                 # so be careful to only read the valid entries.
@@ -277,11 +288,27 @@ class PushAway(SingleArmEnv):
                 if geom1_body == self.cube_body_id or geom2_body == self.cube_body_id:
                     # if it is the bottom surface, skip
                     contact_pos = contact.pos
+                    contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
+                    
                     if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
                         continue
                     reward += 0.25
+
+                    # todo: add a force limit here!-----------------------------------------------------------------------------------
+
+                    # log data here
+                    if self.is_contact_logging:
+                        data = np.concatenate( [contact_pos, contact_force, np.array(self.sim.data.body_xpos[self.cube_body_id]), convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")])
+                        self.log_data(data)
+
+                        logged = True
                     # print("Contact rewarded!")
                     break
+            
+            if not logged and self.is_contact_logging:
+                # log data here
+                data = np.concatenate( [np.zeros(9), np.array(self.sim.data.body_xpos[self.cube_body_id]), convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")])
+                self.log_data(data)
 
         # Scale reward if requested
         if self.reward_scale is not None:
@@ -439,9 +466,19 @@ class PushAway(SingleArmEnv):
                     
                     # print(' Contact force on cube body: {} with format: {}'.format( contact_force, type(contact_force)))
                     # print(' Contact position on cube body: {} with format: {}'.format( contact_pos, type(contact_force)))
+
+                    # log data here
+                    # data = np.concatenate( [contact_pos, contact_force, np.array(self.sim.data.body_xpos[self.cube_body_id]), convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")])
+                    # with open('cube_info.npy', 'a+') as f:
+                    #     np.save(f, data)
                     
                     return np.concatenate( [contact_pos, contact_force])
 
+
+            # log data here
+            # data = np.concatenate( [ np.zeros(9), np.array(self.sim.data.body_xpos[self.cube_body_id]), convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")])
+            # with open('cube_info.npy', 'a+') as f:
+            #     np.save(f, data)
             return np.zeros(9)
 
         sensors.append(contact_info)
@@ -506,13 +543,21 @@ class PushAway(SingleArmEnv):
 
     def _check_success(self):
         """
-        Check if cube has been lifted.
+        Check if cube has been moved.
 
         Returns:
-            bool: True if cube has been lifted
+            bool: True if cube has been moved
         """
         cube_position = self.sim.data.body_xpos[self.cube_body_id]
         targe_position = self.model.mujoco_arena.goal_pose
 
         # cube is higher than the table top above a margin
         return abs(cube_position[0]-targe_position[0]) < self.close_to_goal_threshold and abs(cube_position[1]-targe_position[1]) < self.close_to_goal_threshold
+
+    def log_data(self, data):
+        """
+        log the data to the default file
+        """
+
+        with open(self.contact_log_name, 'a') as f:
+            np.savetxt(f, np.reshape(data, (1,-1)), delimiter=",")
