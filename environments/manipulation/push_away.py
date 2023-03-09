@@ -351,8 +351,10 @@ class PushAway(SingleArmEnv):
             self.placement_initializer = UniformRandomSampler(
                 name="ObjectSampler",
                 mujoco_objects=self.cube,
-                x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
-                y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
+                # x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
+                # y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
+                x_range=[-0.02, 0.02],
+                y_range=[-0.02, 0.02],
                 rotation=None,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
@@ -423,7 +425,7 @@ class PushAway(SingleArmEnv):
         # add goal position
         @sensor(modality=modality)
         def goal_position(obs_cache):
-            return self.model.mujoco_arena.goal_pose
+            return self.model.mujoco_arena.goal_pose - self.sim.data.body_xpos[self.cube_body_id][:2]
         
         sensors.append(goal_position)
 

@@ -108,16 +108,25 @@ class PushArena(Arena):
             np.array: the (x,y) value of the newly sampled dirt starting location
         """
         # First define the pose 
+        # make it to a circle
+        radius = 0.5   # half a meter
+        angle = np.random.uniform(0, 2*3.1416)
 
         return np.array(
             (
-                np.random.uniform(
-                    -self.table_half_size[0] * 0.8,
-                    self.table_half_size[0] * 0.8,
-                ),
-                np.random.uniform(
-                    -self.table_half_size[1] * 0.8,
-                    self.table_half_size[1] * 0.8,
-                ),
+                radius*np.cos(angle),
+                radius*np.sin(angle),
             )
-        )
+        ) 
+        # return np.array(
+        #     (
+        #         np.random.uniform(
+        #             -self.table_half_size[0] * 0.8,
+        #             self.table_half_size[0] * 0.8,
+        #         ),
+        #         np.random.uniform(
+        #             -self.table_half_size[1] * 0.8,
+        #             self.table_half_size[1] * 0.8,
+        #         ),
+        #     )
+        # )
