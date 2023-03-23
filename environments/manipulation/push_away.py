@@ -375,8 +375,8 @@ class PushAway(SingleArmEnv):
         )
         self.cube = BoxObject(
             name="cube",
-            size_min=[0.10, 0.10, 0.10],  # [0.015, 0.015, 0.015],
-            size_max=[0.12, 0.12, 0.12],  # [0.018, 0.018, 0.018])
+            size_min=[0.7, 0.7, 0.7],  # [0.015, 0.015, 0.015],
+            size_max=[0.9, 0.9, 0.9],  # [0.018, 0.018, 0.018])
             rgba=[1, 0, 0, 1],
             material=redwood,
         )
