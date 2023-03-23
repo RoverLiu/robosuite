@@ -8,9 +8,11 @@ from robosuite.models.objects import BoxObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
-from robosuite.utils.placement_samplers import UniformRandomSampler
+from robosuite.utils.placement_samplers import UniformRandomSampler, SequentialCompositeSampler
 from robosuite.utils.transform_utils import convert_quat
 import time
+from robosuite.models.objects import CylinderObject
+from robosuite.utils.mjcf_utils import CustomMaterial, find_elements
 
 class PushAway(SingleArmEnv):
     """
@@ -244,7 +246,7 @@ class PushAway(SingleArmEnv):
                 the large contact force
             - Moving: reward the block position
 
-        The sparse reward only consists of the lifting component.
+        The sparse reward only consists of the pushing component.
 
         Note that the final reward is normalized and scaled by
         reward_scale / 2.25 as well so that the max score is equal to reward_scale
@@ -302,6 +304,12 @@ class PushAway(SingleArmEnv):
                     reward += force_reward
                     # print("Contact rewarded!")
                     
+                    
+                    # if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
+                    #     continue
+                    # reward += 0.25
+
+
                     # if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
                     #     continue
                     # reward += 0.25
@@ -349,6 +357,7 @@ class PushAway(SingleArmEnv):
         mujoco_arena.set_origin([0, 0, 0])
 
         # initialize objects of interest
+        # cube
         tex_attrib = {
             "type": "cube",
         }
@@ -371,6 +380,49 @@ class PushAway(SingleArmEnv):
             rgba=[1, 0, 0, 1],
             material=redwood,
         )
+        
+        # goal position marker
+        # add marker to goal position
+        tex_attrib = {
+            "type": "cube",
+        }
+        mat_attrib = {
+            "texrepeat": "1 1",
+            "specular": "0.0",
+            "shininess": "0.0",
+        }
+
+        dirt = CustomMaterial(
+            texture="Dirt",
+            tex_name="dirt",
+            mat_name="dirt_mat",
+            tex_attrib=tex_attrib,
+            mat_attrib=mat_attrib,
+            shared=True,
+        )
+
+        self.goal_marker  = CylinderObject(
+            name="GoalPosition",
+            size=[ 0.1, 0.001],
+            rgba=[1, 1, 1, 1],
+            material=dirt,
+            obj_type="visual",
+            joints=None,
+        )
+
+        # Manually add this object to the arena xml
+        mujoco_arena.merge_assets(self.goal_marker)
+        table = find_elements(root=mujoco_arena.worldbody, tags="body", attribs={"name": "table"}, return_first=True)
+        table.append(self.goal_marker.get_obj())
+
+        # # set position
+        # body_id = self.sim.model.body_name2id(self.goal_marker.root_body)
+        # position = np.array([mujoco_arena.goal_pose[0], mujoco_arena.goal_pose[1], self.table_full_size[2]])
+        # self.sim.model.body_pos[body_id] = position
+
+        # self.goal_pose_marker = marker
+        # self.goal_marker = 
+
 
         # Create placement initializer
         if self.placement_initializer is not None:
@@ -378,7 +430,7 @@ class PushAway(SingleArmEnv):
             self.placement_initializer.add_objects(self.cube)
         else:
             self.placement_initializer = UniformRandomSampler(
-                name="ObjectSampler",
+                name="CubeSampler",
                 mujoco_objects=self.cube,
                 # x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
                 # y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
@@ -390,6 +442,38 @@ class PushAway(SingleArmEnv):
                 reference_pos=self.table_offset,
                 z_offset=0.01,
             )
+
+            # self.placement_initializer = SequentialCompositeSampler(name="ObjectSampler")
+            # self.placement_initializer.append_sampler( UniformRandomSampler(
+            #     name="CubeSampler",
+            #     mujoco_objects=self.cube,
+            #     # x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
+            #     # y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
+            #     x_range=[-0.02, 0.02],
+            #     y_range=[-0.02, 0.02],
+            #     rotation=None,
+            #     ensure_object_boundary_in_range=False,
+            #     ensure_valid_placement=True,
+            #     reference_pos=self.table_offset,
+            #     z_offset=0.01,
+            # ))
+
+            # self.placement_initializer.append_sampler( UniformRandomSampler(
+            #     name="MarkerSampler",
+            #     mujoco_objects=self.goal_marker,
+            #     # x_range=[-self.table_full_size[0]*0.2, self.table_full_size[0]*0.2],
+            #     # y_range=[-self.table_full_size[1]*0.2, self.table_full_size[1]*0.2],
+            #     x_range=[mujoco_arena.goal_pose[0]-0.0002, mujoco_arena.goal_pose[0]+0.0002],
+            #     y_range=[mujoco_arena.goal_pose[1]-0.0002, mujoco_arena.goal_pose[1]+0.0002],
+            #     rotation=None,
+            #     ensure_object_boundary_in_range=False,
+            #     ensure_valid_placement=True,
+            #     reference_pos=self.table_offset,
+            #     z_offset=0.01,
+            # ))
+
+            # self.placement_initializer.add_objects_to_sampler(sampler_name=f"CubeSampler", mujoco_objects=self.cube)
+            # self.placement_initializer.add_objects_to_sampler(sampler_name=f"MarkerSampler", mujoco_objects=self.goal_marker)
 
         # task includes arena, robot, and objects of interest
         self.model = ManipulationTask(
@@ -451,10 +535,15 @@ class PushAway(SingleArmEnv):
             #     )
             # sensors.append(gripper_to_cube_pos)
         
-        # add goal position
-        @sensor(modality=modality)
-        def goal_position(obs_cache):
-            return self.model.mujoco_arena.goal_pose - self.sim.data.body_xpos[self.cube_body_id][:2]
+            # add goal position
+            @sensor(modality=modality)
+            def goal_position(obs_cache):
+                return self.model.mujoco_arena.goal_pose - self.sim.data.body_xpos[self.cube_body_id][:2]
+        else:
+            # add goal position
+            @sensor(modality=modality)
+            def goal_position(obs_cache):
+                return self.model.mujoco_arena.goal_pose
         
         sensors.append(goal_position)
 
@@ -531,6 +620,7 @@ class PushAway(SingleArmEnv):
 
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
+            self.model.mujoco_arena.reset_arena(self.sim, self.goal_marker)
 
             # Sample from the placement initializer for all objects
             object_placements = self.placement_initializer.sample()

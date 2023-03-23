@@ -2,7 +2,8 @@ import numpy as np
 
 from robosuite.models.arenas import Arena
 from robosuite.utils.mjcf_utils import array_to_string, string_to_array, xml_path_completion
-
+from robosuite.models.objects import CylinderObject
+from robosuite.utils.mjcf_utils import CustomMaterial, find_elements
 
 class PushArena(Arena):
     """
@@ -23,6 +24,7 @@ class PushArena(Arena):
         table_full_size=(1.2, 2.5, 0.05),
         table_friction=(1, 0.005, 0.0001),
         table_offset=(0, 0, 0.8),
+        line_width=0.2,
         has_legs=True,
         xml="arenas/table_arena.xml",
     ):
@@ -47,6 +49,7 @@ class PushArena(Arena):
             self.table_body.find("./geom[@name='table_leg4_visual']"),
         ]
 
+        self.line_width = line_width
         self.configure_location()
 
     def configure_location(self):
@@ -112,6 +115,7 @@ class PushArena(Arena):
         radius = 0.5   # half a meter
         angle = np.random.uniform(0, 2*3.1416)
 
+
         return np.array(
             (
                 radius*np.cos(angle),
@@ -130,3 +134,28 @@ class PushArena(Arena):
         #         ),
         #     )
         # )
+
+    def reset_arena(self, sim, goal_marker):
+        """
+        Reset the visual marker locations in the environment. Requires @sim (MjSim) reference to be passed in so that
+        the Mujoco sim can be directly modified
+
+        Args:
+            sim (MjSim): Simulation instance containing this arena and visual markers
+        """
+        # Sample new initial position and direction for generated marker paths
+        pos = self.sample_start_pos()
+
+        # check visual markers
+        # Get IDs to the body, geom, and site of each marker
+        body_id = sim.model.body_name2id(goal_marker.root_body)
+        geom_id = sim.model.geom_name2id(goal_marker.visual_geoms[0])
+        site_id = sim.model.site_name2id(goal_marker.sites[0])
+        # Determine new position for this marker
+        position = np.array([pos[0], pos[1], self.table_half_size[2]])
+        # Set the current marker (body) to this new position
+        sim.model.body_pos[body_id] = position
+        # Reset the marker visualization -- setting geom rgba alpha value to 1
+        sim.model.geom_rgba[geom_id][3] = 1
+        # Hide the default visualization site
+        sim.model.site_rgba[site_id][3] = 0
