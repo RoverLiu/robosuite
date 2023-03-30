@@ -158,7 +158,7 @@ class PushAway(SingleArmEnv):
         is_using_estimator = True,
         model_name = 'SVM',
         model_prefix = 'svm/small/',
-        is_estimator_logging = False,
+        is_estimator_logging = True,
 
 
         reward_scale=1.0,
