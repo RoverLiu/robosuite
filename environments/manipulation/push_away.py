@@ -297,13 +297,13 @@ class PushAway(SingleArmEnv):
             gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
             dist = np.linalg.norm(gripper_site_pos - cube_pos)
             reaching_reward = 1 - np.tanh(10.0 * dist)
-            reward += reaching_reward
+            # reward += reaching_reward
 
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
             position_reward = 1 - np.tanh(10.0 * dist)
-            # reward += position_reward
+            reward += position_reward
 
             # contact reward
             logged = False
