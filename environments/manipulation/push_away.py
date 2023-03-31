@@ -155,10 +155,10 @@ class PushAway(SingleArmEnv):
         is_contact_logging = True,
         contact_force_limit = 10,
 
-        is_using_estimator = True,
+        is_using_estimator = False,
         model_name = 'SVM',
         model_prefix = 'svm/small/',
-        is_estimator_logging = True,
+        is_estimator_logging = False,
 
 
         reward_scale=1.0,
