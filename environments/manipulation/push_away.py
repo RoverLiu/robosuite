@@ -303,7 +303,7 @@ class PushAway(SingleArmEnv):
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
             position_reward = 1 - np.tanh(10.0 * dist)
-            reward += position_reward
+            # reward += position_reward
 
             # contact reward
             logged = False
@@ -332,7 +332,7 @@ class PushAway(SingleArmEnv):
                         continue
 
                     force_reward = 1 - np.tanh(10.0 * abs(abs_force - self.contact_force_limit))
-                    # reward += force_reward
+                    reward += force_reward
 
                     # log data here
                     if self.is_contact_logging:
