@@ -220,6 +220,7 @@ class PushAway(SingleArmEnv):
 
         # set up estimator
         if self.is_using_estimator:
+            print("\nUsing estimator for cube position\n")
             if model_name == 'SVM':
                 # let the reset to set up the initial position
                 self.estimator = SVMModel(prefix=model_prefix)
@@ -653,7 +654,7 @@ class PushAway(SingleArmEnv):
 
             # Loop through all objects and reset their positions
             for obj_pos, obj_quat, obj in object_placements.values():
-                print("data for rest - pos: {}, quat: {}, obj: {}".format(obj_pos, obj_quat, obj))
+                # print("data for rest - pos: {}, quat: {}, obj: {}".format(obj_pos, obj_quat, obj))
                 self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
 
                 if obj == self.cube:

@@ -145,12 +145,12 @@ class SVMModel:
 # print("This file directory only")
 # print(os.path.dirname(full_path))
 # test
-estimator = SVMModel('svm/small/',[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
+# estimator = SVMModel('svm/small/',[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
 
-estimator.combined_predict([1,2,3,0,0,0,0,0,0])
+# estimator.combined_predict([1,2,3,0,0,0,0,0,0])
 
-print(estimator.get_pose())
+# print(estimator.get_pose())
 
-estimator.combined_predict([1,2,3,0,0,0,0,0,0])
+# estimator.combined_predict([1,2,3,0,0,0,0,0,0])
 
-print(estimator.get_pose())
+# print(estimator.get_pose())
