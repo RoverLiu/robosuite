@@ -296,14 +296,16 @@ class PushAway(SingleArmEnv):
                 cube_pos = self.sim.data.body_xpos[self.cube_body_id]
             gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
             dist = np.linalg.norm(gripper_site_pos - cube_pos)
-            reaching_reward = 1 - np.tanh(10.0 * dist)
-            # reward += reaching_reward
+
+            # mapping to better range
+            reaching_reward = 1 - np.tanh(2/0.34*(dist-0.06))
+            reward += 0.75*reaching_reward
 
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
-            position_reward = 1 - np.tanh(10.0 * dist)
-            # reward += position_reward
+            position_reward = 1 - np.tanh(2*dist)
+            reward += 0.75*position_reward
 
             # contact reward
             logged = False
@@ -331,8 +333,8 @@ class PushAway(SingleArmEnv):
                     if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
                         continue
 
-                    force_reward = 1 - np.tanh(10.0 * abs(abs_force - self.contact_force_limit))
-                    reward += force_reward
+                    force_reward = 1 - np.tanh(0.2*abs(abs_force - self.contact_force_limit))
+                    reward += 0.75*force_reward
 
                     # log data here
                     if self.is_contact_logging:
