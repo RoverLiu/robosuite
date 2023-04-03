@@ -153,7 +153,7 @@ class PushAway(SingleArmEnv):
         close_to_goal_threshold = 0.02,
 
         is_contact_logging = True,
-        contact_force_limit = 10,
+        contact_force_limit = 20,
 
         is_using_estimator = False,
         model_name = 'SVM',
@@ -299,13 +299,13 @@ class PushAway(SingleArmEnv):
 
             # mapping to better range
             reaching_reward = 1 - np.tanh(2/0.34*(dist-0.06))
-            reward += 0.75*reaching_reward
+            reward += 0.25*reaching_reward
 
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
             position_reward = 1 - np.tanh(2*dist)
-            reward += 0.75*position_reward
+            reward += position_reward
 
             # contact reward
             logged = False
