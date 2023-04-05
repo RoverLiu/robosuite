@@ -112,8 +112,9 @@ class PushArena(Arena):
         """
         # First define the pose 
         # make it to a circle
-        radius = 0.4   # half a meter
-        angle = np.random.uniform(0, 2*3.1416)
+        radius = 0.5   # half a meter
+        pi = 3.1416
+        angle = np.random.choice([np.random.uniform(pi/3, pi/3*2), np.random.uniform(-pi/3*2, -pi/3)])
 
 
         return np.array(

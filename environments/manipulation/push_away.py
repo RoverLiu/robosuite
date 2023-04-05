@@ -305,7 +305,7 @@ class PushAway(SingleArmEnv):
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
             position_reward = 1 - np.tanh(2*dist)
-            reward += position_reward
+            reward += 1.5*position_reward
 
             # contact reward
             logged = False
@@ -327,14 +327,14 @@ class PushAway(SingleArmEnv):
                     # if it is the bottom surface, skip
                     contact_pos = contact.pos
                     contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
-                    abs_force = np.linalg.norm(contact_force[:3]) 
+                    abs_force = np.linalg.norm(contact_force[3:]) 
 
                     # contact the table
                     if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
                         continue
 
                     force_reward = 1 - np.tanh(0.2*abs(abs_force - self.contact_force_limit))
-                    reward += 0.75*force_reward
+                    reward += 0.5*force_reward
 
                     # log data here
                     if self.is_contact_logging:
