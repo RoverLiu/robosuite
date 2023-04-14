@@ -114,7 +114,7 @@ class PushArena(Arena):
         # make it to a circle
         radius = 0.5   # half a meter
         pi = 3.1416
-        angle = np.random.choice([np.random.uniform(pi/3, pi/3*2), np.random.uniform(-pi/3*2, -pi/3)])
+        angle = np.random.uniform(pi/5*2, pi/5*3)
 
 
         return np.array(
