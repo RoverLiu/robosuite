@@ -14,6 +14,8 @@ import time
 from robosuite.models.objects import CylinderObject
 from robosuite.utils.mjcf_utils import CustomMaterial, find_elements
 from robosuite.environments.obstacle_estimator.svm_estimator import SVMModel
+from robosuite.environments.obstacle_estimator.relative_fc_nn_estimator import RelativeFCNN
+from robosuite.environments.obstacle_estimator.relative_fc_nn_estimator_complex import RelativeComplexFCNN
 
 class PushAway(SingleArmEnv):
     """
@@ -156,8 +158,15 @@ class PushAway(SingleArmEnv):
         contact_force_limit = 20,
 
         is_using_estimator = False,
-        model_name = 'SVM',
-        model_prefix = 'svm/small/',
+
+        model_name = 'fc_nn_complex',
+        model_prefix = 'fc_nn/small_complex/',
+
+        # model_name = 'fc_nn_position',
+        # model_prefix = 'fc_nn/relative/big_pos/',
+
+        # model_name = 'SVM',
+        # model_prefix = 'svm/small/',
         is_estimator_logging = False,
 
 
@@ -225,6 +234,14 @@ class PushAway(SingleArmEnv):
                 # let the reset to set up the initial position
                 self.estimator = SVMModel(prefix=model_prefix)
                 # self.estimator = SVMModel(prefix=model_prefix, start_pose=[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
+
+            elif model_name == 'fc_nn_position':
+                self.estimator = RelativeFCNN(prefix=model_prefix)
+
+            elif model_name == 'fc_nn_complex':
+                self.estimator = RelativeComplexFCNN(prefix=model_prefix)
+
+
 
         super().__init__(
             robots=robots,
