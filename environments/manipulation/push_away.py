@@ -154,7 +154,7 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
-        is_contact_logging = True,
+        is_contact_logging = False,
         contact_force_limit = 20,
 
         is_using_estimator = False,
@@ -316,7 +316,7 @@ class PushAway(SingleArmEnv):
 
             # mapping to better range
             reaching_reward = 1 - np.tanh(2/0.34*(dist-0.06))
-            reward += 0.25*reaching_reward
+            # reward += 0.25*reaching_reward
 
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
@@ -351,7 +351,7 @@ class PushAway(SingleArmEnv):
                         continue
 
                     force_reward = 1 - np.tanh(0.2*abs(abs_force - self.contact_force_limit))
-                    reward += 0.5*force_reward
+                    reward += 0.5*force_reward + 0.25
 
                     # log data here
                     if self.is_contact_logging:
