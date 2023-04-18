@@ -298,16 +298,14 @@ class PushAway(SingleArmEnv):
             dist = np.linalg.norm(gripper_site_pos - cube_pos)
 
             # mapping to better range
-            reaching_reward = np.tanh(2/0.34*(dist-0.06))
-            reward += 0.125*reaching_reward
+            reaching_reward = 1 - np.tanh(8/0.34*(abs(dist-0.15)))
+            reward += 0.075*reaching_reward
 
             # block position reward
             goal_pose = self.model.mujoco_arena.goal_pose
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
-            if dist > self.close_to_goal_threshold *2:
-                position_reward = 1 - np.tanh(2*dist)
-            else:
-                position_reward = 1 - dist
+            
+            position_reward = 1 - np.tanh(2*dist)
             reward += 1.5*position_reward
 
             # contact reward
@@ -337,7 +335,7 @@ class PushAway(SingleArmEnv):
                         continue
 
                     force_reward = 1 - np.tanh(0.2*abs(abs_force - self.contact_force_limit))
-                    reward += 0.5*force_reward + 0.125 * np.tanh(2*dist)
+                    reward += 0.5*force_reward + 0.175 
 
                     # log data here
                     if self.is_contact_logging:
