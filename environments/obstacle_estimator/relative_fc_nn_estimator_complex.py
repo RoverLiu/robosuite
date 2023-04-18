@@ -92,9 +92,11 @@ class RelativeComplexFCNN:
         self.model.load_state_dict(torch.load(prefix+'model.pth'))
 
     def get_pose(self):
+        # pos_X, pos_y, pos_z, quat_x, quat_y, quat_z, quat_w
         return self.current_pose
     
     def set_start_pose(self, start_pose):
+        # pos_X, pos_y, pos_z, quat_x, quat_y, quat_z, quat_w
         self.current_pose = start_pose
         print("current pose in the reset: {}".format(self.current_pose))
 
@@ -138,11 +140,16 @@ class RelativeComplexFCNN:
 
         # transfer to absolute
         # position
-        self.current_pose[0] += new_pred[0]
-        self.current_pose[1] += new_pred[1]
-        self.current_pose[2] += new_pred[2]
+        self.current_pose[0] += new_pred[4]
+        self.current_pose[1] += new_pred[5]
+        self.current_pose[2] += new_pred[6]
 
-        [w,x,y,z] = self.relative_quat(self.current_pose[3:], new_pred[3:])
+        # convert quat
+        quat_wxyz = new_pred[:4]
+        quat_wxyz.append(quat_wxyz[0])
+        quat_xyzw = quat_wxyz[1:]
+
+        [w,x,y,z] = self.relative_quat(self.current_pose[3:], quat_xyzw)
         self.current_pose[3] = x
         self.current_pose[4] = y
         self.current_pose[5] = z
@@ -197,12 +204,12 @@ class RelativeComplexFCNN:
 # print("This file directory only")
 # print(os.path.dirname(full_path))
 # test
-estimator = RelativeComplexFCNN('fc_nn/small_complex/',[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
+# estimator = RelativeComplexFCNN('fc_nn/small_complex/',[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
 
-estimator.combined_predict([1,2,3,0,0,0,0,0,0])
+# estimator.combined_predict([1,2,3,0,0,0,0,0,0])
 
-print(estimator.get_pose())
+# print(estimator.get_pose())
 
-estimator.combined_predict([1,2,4,0,0,0,0,0,0])
+# estimator.combined_predict([1,2,4,0,0,0,0,0,0])
 
-print(estimator.get_pose())
+# print(estimator.get_pose())

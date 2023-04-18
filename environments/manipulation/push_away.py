@@ -154,10 +154,10 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
-        is_contact_logging = False,
+        is_contact_logging = True,
         contact_force_limit = 20,
 
-        is_using_estimator = False,
+        is_using_estimator = True,
 
         model_name = 'fc_nn_complex',
         model_prefix = 'fc_nn/small_complex/',
@@ -167,7 +167,7 @@ class PushAway(SingleArmEnv):
 
         # model_name = 'SVM',
         # model_prefix = 'svm/small/',
-        is_estimator_logging = False,
+        is_estimator_logging = True,
 
 
         reward_scale=1.0,
@@ -217,9 +217,18 @@ class PushAway(SingleArmEnv):
             self.contact_log_name = "contact_log/"+time.strftime("%Y%m%d-%H%M%S")+".csv"
             print("#########################################\nContacf detail is logged to: {}".format(self.contact_log_name))
 
+            # first line
+            with open(self.contact_log_name, 'a') as f:
+                f.write( 'contact_x,contact_y,contact_z,moment_x,moment_y,moment_z,force_x,force_y,force_z,cube_x,cube_y,cube_z,qx,qy,qz,qw\n')
+            
+
         if self.is_estimator_logging:
             self.estimator_log_name = "estimator_log/"+time.strftime("%Y%m%d-%H%M%S")+".csv"
             print("#########################################\nContacf detail is logged to: {}".format(self.contact_log_name))
+
+            with open(self.estimator_log_name, 'a') as f:
+                f.write( 'cube_x,cube_y,cube_z,qx,qy,qz,qw\n')
+
         
         # contact force limit
         self.contact_force_limit = contact_force_limit
@@ -470,7 +479,7 @@ class PushAway(SingleArmEnv):
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
                 reference_pos=self.table_offset,
-                z_offset=0.01,
+                z_offset=0.0,
             )
              
             # todo: estimator
@@ -679,7 +688,7 @@ class PushAway(SingleArmEnv):
                 if obj == self.cube:
                      # reset estimator
                     if self.is_using_estimator:
-                        pose = list(obj_pos) + list(obj_quat)
+                        pose = list(obj_pos) + list(convert_quat(np.array(obj_quat), to="xyzw"))
                         print("pose generated: {}".format(pose))
                         self.estimator.set_start_pose(pose)
 
