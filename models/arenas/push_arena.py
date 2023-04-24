@@ -116,11 +116,11 @@ class PushArena(Arena):
         pi = 3.1416
         angle = np.random.uniform(pi/5*2, pi/5*3)
 
-
+        # move closer to robot
         return np.array(
             (
-                radius*np.cos(angle),
-                radius*np.sin(angle),
+                radius*np.cos(angle) - 0.1,
+                radius*np.sin(angle),  # this is vertical distance
             )
         ) 
         # return np.array(
