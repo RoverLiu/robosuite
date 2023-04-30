@@ -16,6 +16,8 @@ from robosuite.utils.mjcf_utils import CustomMaterial, find_elements
 from robosuite.environments.obstacle_estimator.svm_estimator import SVMModel
 from robosuite.environments.obstacle_estimator.relative_fc_nn_estimator import RelativeFCNN
 from robosuite.environments.obstacle_estimator.relative_fc_nn_estimator_complex import RelativeComplexFCNN
+from robosuite.environments.obstacle_estimator.abs_fc_nn_estimator_sequence import AbsFCNN
+
 
 class PushAway(SingleArmEnv):
     """
@@ -159,8 +161,11 @@ class PushAway(SingleArmEnv):
 
         is_using_estimator = False,
 
-        model_name = 'fc_nn_complex',
-        model_prefix = 'fc_nn/small_complex/',
+        model_name = 'fc_nn_sequence',
+        model_prefix = 'fc_nn/sequence/',
+
+        # model_name = 'fc_nn_complex',
+        # model_prefix = 'fc_nn/small_complex/',
 
         # model_name = 'fc_nn_position',
         # model_prefix = 'fc_nn/relative/big_pos/',
@@ -240,6 +245,9 @@ class PushAway(SingleArmEnv):
 
             elif model_name == 'fc_nn_complex':
                 self.estimator = RelativeComplexFCNN(prefix=model_prefix)
+
+            elif model_name == 'fc_nn_sequence':
+                self.estimator = AbsFCNN(prefix=model_prefix)
 
 
 
