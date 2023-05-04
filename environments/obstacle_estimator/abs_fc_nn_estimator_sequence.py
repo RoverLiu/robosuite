@@ -16,7 +16,7 @@ from torch.utils.data import TensorDataset
 # currently it is position only estimation
 #--------------------------------------------
 class AbsFCNN:
-    def __init__(self, prefix, start_pose=None):
+    def __init__(self, prefix, start_pose=None, sequence = 10):
         self.models = {}
 
         # get path correct
@@ -25,7 +25,7 @@ class AbsFCNN:
         prefix = path + '/' + prefix
 
         # define the size of sequence 
-        self.sequence = 10
+        self.sequence = sequence
 
 
         # in the format of position + quaternion (x,y,z,w)
@@ -121,7 +121,8 @@ class AbsFCNN:
         else:
             input_data = list(input_data)
             input_data = input_data + self.current_pose
-            self.last_input = np.concatenate([self.last_input[1:], np.array([input_data])])
+            input_data = self.scaler_x.transform(np.array([input_data]))
+            self.last_input = np.concatenate([self.last_input[1:], np.array(input_data)])
 
         self.last_input = np.array(self.last_input)
         # print("last input shape: {}".format(self.last_input.shape))

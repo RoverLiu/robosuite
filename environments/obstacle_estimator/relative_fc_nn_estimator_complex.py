@@ -197,12 +197,12 @@ class RelativeComplexFCNN:
 # print("This file directory only")
 # print(os.path.dirname(full_path))
 # test
-estimator = RelativeComplexFCNN('fc_nn/small_complex/',[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
+# estimator = RelativeComplexFCNN('fc_nn/small_complex/',[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
 
-estimator.combined_predict([1,2,3,0,0,0,0,0,0])
+# estimator.combined_predict([1,2,3,0,0,0,0,0,0])
 
-print(estimator.get_pose())
+# print(estimator.get_pose())
 
-estimator.combined_predict([1,2,4,0,0,0,0,0,0])
+# estimator.combined_predict([1,2,4,0,0,0,0,0,0])
 
-print(estimator.get_pose())
+# print(estimator.get_pose())
