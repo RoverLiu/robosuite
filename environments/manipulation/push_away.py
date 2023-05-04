@@ -160,7 +160,7 @@ class PushAway(SingleArmEnv):
         is_contact_logging = True,
         contact_force_limit = 20,
 
-        is_using_estimator = True,
+        is_using_estimator = False,
 
         # model_name = 'tcnn_simple',
         # model_prefix = 'tcnn/simple/',
@@ -177,7 +177,7 @@ class PushAway(SingleArmEnv):
 
         # model_name = 'SVM',
         # model_prefix = 'svm/small/',
-        is_estimator_logging = True,
+        is_estimator_logging = False,
 
         is_cube_biased = True,
         bias_mean = 0,
