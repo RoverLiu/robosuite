@@ -14,6 +14,11 @@ import time
 from robosuite.models.objects import CylinderObject
 from robosuite.utils.mjcf_utils import CustomMaterial, find_elements
 from robosuite.environments.obstacle_estimator.svm_estimator import SVMModel
+from robosuite.environments.obstacle_estimator.relative_fc_nn_estimator import RelativeFCNN
+from robosuite.environments.obstacle_estimator.relative_fc_nn_estimator_complex import RelativeComplexFCNN
+from robosuite.environments.obstacle_estimator.abs_fc_nn_estimator_sequence import AbsFCNN
+from robosuite.environments.obstacle_estimator.TCNN_simple import TCN
+
 
 class PushAway(SingleArmEnv):
     """
@@ -152,13 +157,27 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
-        is_contact_logging = False,
+        is_contact_logging = True,
         contact_force_limit = 20,
 
-        is_using_estimator = False,
-        model_name = 'SVM',
-        model_prefix = 'svm/small/',
-        is_estimator_logging = False,
+        is_using_estimator = True,
+
+        # model_name = 'tcnn_simple',
+        # model_prefix = 'tcnn/simple/',
+
+
+        model_name = 'fc_nn_sequence',
+        model_prefix = 'cylinder/fc_nn_seq/',
+
+        # model_name = 'fc_nn_complex',
+        # model_prefix = 'fc_nn/small_complex/',
+
+        # model_name = 'fc_nn_position',
+        # model_prefix = 'fc_nn/relative/big_pos/',
+
+        # model_name = 'SVM',
+        # model_prefix = 'svm/small/',
+        is_estimator_logging = True,
 
 
         reward_scale=1.0,
@@ -207,10 +226,14 @@ class PushAway(SingleArmEnv):
         if self.is_contact_logging:
             self.contact_log_name = "contact_log/"+time.strftime("%Y%m%d-%H%M%S")+".csv"
             print("#########################################\nContacf detail is logged to: {}".format(self.contact_log_name))
+            with open(self.contact_log_name, 'a') as f:
+                f.write('contact_x,contact_y,contact_z,moment_x,moment_y,moment_z,force_x,force_y,force_z,cube_x,cube_y,cube_z,qx,qy,qz,qw\n')
 
         if self.is_estimator_logging:
             self.estimator_log_name = "estimator_log/"+time.strftime("%Y%m%d-%H%M%S")+".csv"
             print("#########################################\nContacf detail is logged to: {}".format(self.contact_log_name))
+            with open(self.estimator_log_name, 'a') as f:
+                f.write('cube_x,cube_y,cube_z,qx,qy,qz,qw\n')
         
         # contact force limit
         self.contact_force_limit = contact_force_limit
@@ -225,6 +248,19 @@ class PushAway(SingleArmEnv):
                 # let the reset to set up the initial position
                 self.estimator = SVMModel(prefix=model_prefix)
                 # self.estimator = SVMModel(prefix=model_prefix, start_pose=[0.0,0.0,0.0,0.0,0.0,0.0,1.0])
+
+            elif model_name == 'fc_nn_position':
+                self.estimator = RelativeFCNN(prefix=model_prefix)
+
+            elif model_name == 'fc_nn_complex':
+                self.estimator = RelativeComplexFCNN(prefix=model_prefix)
+
+            elif model_name == 'fc_nn_sequence':
+                self.estimator = AbsFCNN(prefix=model_prefix)
+
+            elif model_name == 'tcnn_simple':
+                self.estimator = TCN(prefix=model_prefix)
+
 
         super().__init__(
             robots=robots,
@@ -343,6 +379,10 @@ class PushAway(SingleArmEnv):
 
                         logged = True
 
+                    # update estimation
+                    if self.is_using_estimator:
+                        self.estimator.combined_predict(np.concatenate([contact_pos, contact_force]))
+
                     break
             
             if not logged and self.is_contact_logging:
@@ -393,7 +433,8 @@ class PushAway(SingleArmEnv):
             tex_attrib=tex_attrib,
             mat_attrib=mat_attrib,
         )
-       	self.cube = CylinderObject(
+        
+        self.cube = CylinderObject(
             name="cube",
        	    size = [0.12, 0.1],
             rgba=[1, 0, 0, 1],
@@ -529,50 +570,54 @@ class PushAway(SingleArmEnv):
                 # cube-related observables
                 @sensor(modality=modality)
                 def cube_pos(obs_cache):
-                    for i in range(self.sim.data.ncon):
-                        # Note that the contact array has more than `ncon` entries,
-                        # so be careful to only read the valid entries.
-                        contact = self.sim.data.contact[i]
+                    # for i in range(self.sim.data.ncon):
+                    #     # Note that the contact array has more than `ncon` entries,
+                    #     # so be careful to only read the valid entries.
+                    #     contact = self.sim.data.contact[i]
 
-                        geom1_body = self.sim.model.geom_bodyid[contact.geom1]
-                        geom2_body = self.sim.model.geom_bodyid[contact.geom2]
+                    #     geom1_body = self.sim.model.geom_bodyid[contact.geom1]
+                    #     geom2_body = self.sim.model.geom_bodyid[contact.geom2]
 
-                        # anything contact with cube would be logged
-                        if geom1_body == self.cube_body_id or geom2_body == self.cube_body_id:
-                            contact_pos = contact.pos
-                            contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
+                    #     # anything contact with cube would be logged
+                    #     if geom1_body == self.cube_body_id or geom2_body == self.cube_body_id:
+                    #         contact_pos = contact.pos
+                    #         contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
                             
-                            # if it is the bottom surface, skip
-                            if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
-                                continue
+                    #         # if it is the bottom surface, skip
+                    #         if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
+                    #             continue
                             
-                            self.estimator.combined_predict(np.concatenate([contact_pos, contact_force]))
+                    #         self.estimator.combined_predict(np.concatenate([contact_pos, contact_force]))
 
-                            return np.array( self.estimator.get_pose()[:3])
+                    #         # return np.array(self.sim.data.body_xpos[self.cube_body_id])
+                    #         return np.array( self.estimator.get_pose()[:3])
+                    # return np.array(self.sim.data.body_xpos[self.cube_body_id])
                     return np.array(self.estimator.get_pose()[:3])
                 
                 @sensor(modality=modality)
                 def cube_quat(obs_cache):
-                    for i in range(self.sim.data.ncon):
+                    # for i in range(self.sim.data.ncon):
                         # Note that the contact array has more than `ncon` entries,
                         # so be careful to only read the valid entries.
-                        contact = self.sim.data.contact[i]
+                        # contact = self.sim.data.contact[i]
 
-                        geom1_body = self.sim.model.geom_bodyid[contact.geom1]
-                        geom2_body = self.sim.model.geom_bodyid[contact.geom2]
+                        # geom1_body = self.sim.model.geom_bodyid[contact.geom1]
+                        # geom2_body = self.sim.model.geom_bodyid[contact.geom2]
 
-                        # anything contact with cube would be logged
-                        if geom1_body == self.cube_body_id or geom2_body == self.cube_body_id:
-                            contact_pos = contact.pos
-                            contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
+                        # # anything contact with cube would be logged
+                        # if geom1_body == self.cube_body_id or geom2_body == self.cube_body_id:
+                        #     contact_pos = contact.pos
+                        #     contact_force = self.sim.data.cfrc_ext[self.cube_body_id]
                             
-                            # if it is the bottom surface, skip
-                            if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
-                                continue
+                        #     # if it is the bottom surface, skip
+                        #     if abs( contact_pos[2] - self.model.mujoco_arena.table_top_abs[2]) < self.close_to_goal_threshold:
+                        #         continue
                             
-                            self.estimator.combined_predict(np.concatenate([contact_pos, contact_force]))
+                        #     self.estimator.combined_predict(np.concatenate([contact_pos, contact_force]))
 
-                            return np.array( self.estimator.get_pose()[3:])
+                        #     # return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
+                        #     return np.array( self.estimator.get_pose()[3:])
+                    # return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
                     return np.array(self.estimator.get_pose()[3:])
 
                 sensors.append(cube_quat)
@@ -661,7 +706,7 @@ class PushAway(SingleArmEnv):
                 if obj == self.cube:
                      # reset estimator
                     if self.is_using_estimator:
-                        pose = list(obj_pos) + list(obj_quat)
+                        pose = list(obj_pos) + list(convert_quat( obj_quat, to="xyzw"))
                         print("pose generated: {}".format(pose))
                         self.estimator.set_start_pose(pose)
 
