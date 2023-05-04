@@ -179,6 +179,10 @@ class PushAway(SingleArmEnv):
         # model_prefix = 'svm/small/',
         is_estimator_logging = True,
 
+        is_cube_biased = True,
+        bias_mean = 0,
+        bias_sigma = 0.2,
+
 
         reward_scale=1.0,
         reward_shaping=False,
@@ -240,6 +244,12 @@ class PushAway(SingleArmEnv):
 
         # using estimator
         self.is_using_estimator = is_using_estimator
+
+        # bias
+        self.is_cube_biased = is_cube_biased
+        self.bias_mean = bias_mean
+        self.bias_sigma = bias_sigma
+
 
         # set up estimator
         if self.is_using_estimator:
@@ -330,6 +340,10 @@ class PushAway(SingleArmEnv):
                 cube_pos = cube_pos[0:3]
             else:
                 cube_pos = self.sim.data.body_xpos[self.cube_body_id]
+
+                # bias the pos
+                cube_pos = self.bias_pose(cube_pos)
+
             gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
             dist = np.linalg.norm(gripper_site_pos - cube_pos)
 
@@ -542,7 +556,7 @@ class PushAway(SingleArmEnv):
                 # cube-related observables
                 @sensor(modality=modality)
                 def cube_pos(obs_cache):
-                    return np.array(self.sim.data.body_xpos[self.cube_body_id])
+                    return np.array(self.bias_pose(self.sim.data.body_xpos[self.cube_body_id]))
 
                 sensors.append(cube_pos)
 
@@ -758,4 +772,13 @@ class PushAway(SingleArmEnv):
             with open(self.estimator_log_name, 'a') as f:
                 np.savetxt(f, np.reshape(self.estimator.get_pose(), (1,-1)), delimiter=",")
 
-        
+    def bias_pose(self, pose):
+        new = []
+        for i in range(len(pose)):
+            # skip z axis
+            if i == 2:
+                new.append(i)
+                continue
+            new.append(i+np.random.normal(self.bias_mean, self.bias_sigma))
+
+        return new
