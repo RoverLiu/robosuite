@@ -181,7 +181,7 @@ class PushAway(SingleArmEnv):
 
         is_cube_biased = True,
         bias_mean = 0,
-        bias_sigma = 0.2,
+        bias_sigma = 0.05,
 
 
         reward_scale=1.0,
