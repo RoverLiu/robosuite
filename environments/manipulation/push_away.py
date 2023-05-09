@@ -435,7 +435,7 @@ class PushAway(SingleArmEnv):
             tex_attrib=tex_attrib,
             mat_attrib=mat_attrib,
         )
-	self.cube = CylinderObject(
+        self.cube = CylinderObject(
             name="cube",
             size = [0.12, 0.1],
             rgba=[1, 0, 0, 1],
