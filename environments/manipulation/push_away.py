@@ -157,10 +157,10 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
-        is_contact_logging = True,
+        is_contact_logging = False,
         contact_force_limit = 20,
 
-        is_using_estimator = True,
+        is_using_estimator = False,
 
         # model_name = 'tcnn_simple',
         # model_prefix = 'tcnn/simple/',
@@ -177,7 +177,7 @@ class PushAway(SingleArmEnv):
 
         # model_name = 'SVM',
         # model_prefix = 'svm/small/',
-        is_estimator_logging = True,
+        is_estimator_logging = False,
 
 
         reward_scale=1.0,
