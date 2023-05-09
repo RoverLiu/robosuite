@@ -435,10 +435,9 @@ class PushAway(SingleArmEnv):
             tex_attrib=tex_attrib,
             mat_attrib=mat_attrib,
         )
-        self.cube = BoxObject(
+	self.cube = CylinderObject(
             name="cube",
-            size_min=[0.12, 0.12, 0.12],  # [0.015, 0.015, 0.015],
-            size_max=[0.15, 0.15, 0.15],  # [0.018, 0.018, 0.018])
+            size = [0.12, 0.1],
             rgba=[1, 0, 0, 1],
             density=30,
             material=redwood,
