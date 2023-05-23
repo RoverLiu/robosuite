@@ -155,10 +155,10 @@ class PushAway(SingleArmEnv):
 
         close_to_goal_threshold = 0.02,
 
-        is_contact_logging = True,
+        is_contact_logging = False,
         contact_force_limit = 20,
 
-        is_using_estimator = True,
+        is_using_estimator = False,
 
         model_name = 'fc_nn_complex_direct',
         model_prefix = 'fc_nn/large_complex_direct/',
@@ -172,7 +172,7 @@ class PushAway(SingleArmEnv):
 
         # model_name = 'SVM',
         # model_prefix = 'svm/small/',
-        is_estimator_logging = True,
+        is_estimator_logging = False,
 
 
         reward_scale=1.0,
@@ -240,6 +240,8 @@ class PushAway(SingleArmEnv):
 
         # using estimator
         self.is_using_estimator = is_using_estimator
+
+        self.is_counted = False
 
         # set up estimator
         if self.is_using_estimator:
@@ -340,6 +342,10 @@ class PushAway(SingleArmEnv):
             dist = np.linalg.norm(goal_pose - cube_pos[:2])
             position_reward = 1 - np.tanh(2*dist)
             reward += 1.5*position_reward
+
+            if dist < 0.05 and self.is_counted == False:
+                self.is_counted = True
+                self.increment_counter()
 
             # contact reward
             logged = False
@@ -748,4 +754,16 @@ class PushAway(SingleArmEnv):
             with open(self.estimator_log_name, 'a') as f:
                 np.savetxt(f, np.reshape(self.estimator.get_pose(), (1,-1)), delimiter=",")
 
-        
+    def increment_counter(self):
+        # Open the file in read mode to retrieve the current number
+        with open('count.txt', 'r') as file:
+            current_number = int(file.read())
+
+        # Increment the current number by 1
+        current_number += 1
+
+        # Open the file in write mode to save the updated number
+        with open('count.txt', 'w') as file:
+            file.write(str(current_number))
+
+        return current_number
